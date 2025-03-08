@@ -1,0 +1,11 @@
+# Ignore large model files (prevents pushing 10GB files to GitHub)
+*.safetensors
+*.bin
+*.h5
+*.pkl
+
+# Ignore Python cache files
+__pycache__/
+
+# Ignore environment files
+.env

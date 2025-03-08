@@ -1,0 +1,4 @@
+import os
+
+# Set the API key as an environment variable
+OPENAI_API_KEY = "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"
