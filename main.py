@@ -2,47 +2,40 @@ import requests
 from bs4 import BeautifulSoup
 from transformers import pipeline
 
-# Load the Mistral-7B model for generating questions (Replaces GPT-2)
+# Load the Falcon-7B model for generating AI-based questions
 generator = pipeline("text-generation", model="tiiuae/falcon-7b")
-
 
 def gen_iq(topic):
     """
-    Generates an AI-based interview question using Mistral-7B.
-    Used as a last resort if web scraping & API both fail.
+    Generates an AI-based interview question using Falcon-7B.
+    Used as a last fallback if web scraping & API both fail.
     """
     prompt = f"Generate a technical interview question related to {topic}:"
-    
     response = generator(prompt, max_length=50, num_return_sequences=1)
-    
     return response[0]["generated_text"]
 
 # ---------------------- WEB SCRAPING FUNCTION ----------------------
 def fetch_questions(topic):
     """
-    Tries to scrape interview questions related to a topic.
+    Scrapes interview questions related to a topic from GeeksforGeeks.
     Adapts to minor website changes to prevent breakage.
     """
     url = f"https://www.geeksforgeeks.org/tag/{topic}/"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0"  # Prevents blocking as a bot
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}  # Prevents bot detection
 
     try:
-        response = requests.get(url, headers=headers, timeout=5)  # Timeout in case site is down
-        response.raise_for_status()  # Raise error for bad responses (404, 500)
+        response = requests.get(url, headers=headers, timeout=5)  # Timeout to handle site issues
+        response.raise_for_status()
     except requests.RequestException:
         return []  # Return empty list if scraping fails
-    
+
     soup = BeautifulSoup(response.text, 'html.parser')
     
-    # Try multiple ways to locate questions to adjust to site changes
+    # Try multiple element tags to adapt to site changes
     question_elements = soup.find_all('h3') or soup.find_all('h2') or soup.find_all('p')
     
     questions = [q.text.strip() for q in question_elements[:5] if q.text.strip()]
-    
-    return questions if questions else []  # Return questions if found, else empty list
+    return questions if questions else []  # Return scraped questions if available
 
 # ---------------------- API FUNCTION (LeetCode) ----------------------
 def get_leetcode_question():
@@ -67,11 +60,12 @@ def get_leetcode_question():
         }
         """
     }
-    
+
     try:
         response = requests.post(url, json=query, timeout=5)
         response.raise_for_status()
         data = response.json()
+        
         if data and "problemsetQuestionList" in data["data"]:
             question = data["data"]["problemsetQuestionList"]["questions"][0]
             return f"{question['title']} ({question['difficulty']})"
